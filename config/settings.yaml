@@ -1,0 +1,127 @@
+# Dual Band Decoder Configuration
+# IO7T - Ham Radio Station
+
+system:
+  hostname: "banddecoder"
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  log_file: "/var/log/banddecoder.log"
+  
+hardware:
+  raspberry_pi_model: "3B"
+  
+radios:
+  radio1:
+    type: "auto"  # auto, yaesu, kenwood, icom
+    name: "Radio 1"
+    bcd_pins:
+      d0: 14  # GPIO BCM
+      d1: 15
+      d2: 10
+      d3: 9
+    icom:
+      enabled: true
+      ads1115_address: 0x48
+      voltage_divider: 2.0  # Partitore 10k/10k
+      
+  radio2:
+    type: "auto"
+    name: "Radio 2"
+    bcd_pins:
+      d0: 13
+      d1: 19
+      d2: 26
+      d3: 11
+    icom:
+      enabled: true
+      ads1115_address: 0x49
+      voltage_divider: 2.0
+
+i2c:
+  software:
+    enabled: true
+    sda_pin: 5
+    scl_pin: 6
+  hardware:
+    enabled: false  # Non usato
+
+relays:
+  board1:
+    name: "Filters Radio 1"
+    pins: [18, 23, 24, 25, 8, 7, 12, 16]
+    logic: "inverse"  # LOW=ON, HIGH=OFF
+    
+  board2:
+    name: "Filters Radio 2 + Antenna Switch"
+    pins: [20, 21, 2, 3, 4, 17, 27, 22]
+    logic: "inverse"
+
+bands:
+  - name: "160m"
+    frequency_range: [1800, 2000]  # kHz
+    bcd_code: 1
+    icom_voltage: [0.0, 0.4]
+    icom_adc_range: [0, 2000]
+    relay_radio1: 0
+    relay_radio2: 0
+    
+  - name: "80m"
+    frequency_range: [3500, 4000]
+    bcd_code: 2
+    icom_voltage: [0.4, 0.7]
+    icom_adc_range: [2500, 4500]
+    relay_radio1: 1
+    relay_radio2: 1
+    
+  - name: "40m"
+    frequency_range: [7000, 7300]
+    bcd_code: 4
+    icom_voltage: [0.8, 1.1]
+    icom_adc_range: [5500, 7500]
+    relay_radio1: 2
+    relay_radio2: 2
+    
+  - name: "20m"
+    frequency_range: [14000, 14350]
+    bcd_code: 6
+    icom_voltage: [1.8, 2.2]
+    icom_adc_range: [12000, 14000]
+    relay_radio1: 3
+    relay_radio2: 3
+    
+  - name: "15m"
+    frequency_range: [21000, 21450]
+    bcd_code: 8
+    icom_voltage: [2.8, 3.2]
+    icom_adc_range: [18000, 20000]
+    relay_radio1: 4
+    relay_radio2: 4
+    
+  - name: "10m"
+    frequency_range: [28000, 29700]
+    bcd_code: 10
+    icom_voltage: [3.8, 4.2]
+    icom_adc_range: [24000, 26000]
+    relay_radio1: 5
+    relay_radio2: 5
+
+antenna_switch:
+  enabled: true
+  relay_radio1: 6  # Relè 7 su board 2
+  relay_radio2: 7  # Relè 8 su board 2
+  modes:
+    both_a: "Both radios on Antenna A"
+    r1a_r2b: "Radio1→AntA, Radio2→AntB"
+    r1b_r2a: "Radio1→AntB, Radio2→AntA"
+    both_b: "Both radios on Antenna B"
+  default_mode: "r1a_r2b"
+
+timing:
+  polling_interval: 0.05  # seconds (50ms)
+  relay_delay: 0.01       # seconds (10ms)
+  debounce_time: 0.02     # seconds (20ms)
+
+web_interface:
+  enabled: false
+  host: "0.0.0.0"
+  port: 5000
+  debug: false
