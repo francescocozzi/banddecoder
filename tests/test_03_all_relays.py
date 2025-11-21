@@ -4,35 +4,50 @@ Test 3: All Relays Sequential Test
 Testa tutti i 16 relè in sequenza
 """
 
-import RPi.GPIO as GPIO
+import lgpio as GPIO  # Sostituito RPi.GPIO con lgpio
 import time
 import sys
 
+# Mappatura dei valori per chiarezza con lgpio
+HIGH = 1
+LOW = 0
+
 # Configurazione relè (dal tuo cablaggio)
-RELAY1_PINS = [18, 23, 24, 25, 8, 7, 12, 16]  # Scheda 1
-RELAY2_PINS = [20, 21, 2, 3, 4, 17, 27, 22]   # Scheda 2
+RELAY1_PINS = [18, 23, 24, 25, 8, 7, 12, 16]   # Scheda 1
+RELAY2_PINS = [20, 21, 2, 3, 4, 17, 27, 22]    # Scheda 2
 
 BANDS = ["160m", "80m", "40m", "20m", "15m", "10m", "N/A", "N/A"]
 
-def test_all_relays():
+# Variabile globale per l'handle del chip GPIO
+H = None 
+
+def test_all_relays(H_handle):
+    """
+    Esegue il test sequenziale di tutti i relè.
+    """
+    global H # Utilizziamo l'handle globale
+    H = H_handle
+
     print("\n" + "="*70)
     print("TEST 3: ALL RELAYS SEQUENTIAL TEST")
     print("="*70 + "\n")
     
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setwarnings(False)
+    # GPIO.setmode() e GPIO.setwarnings() non sono necessari con lgpio
     
     # Setup all relays
     print("Setting up relays...")
     all_pins = RELAY1_PINS + RELAY2_PINS
-    for pin in all_pins:
-        GPIO.setup(pin, GPIO.OUT)
-        GPIO.output(pin, GPIO.HIGH)  # All OFF
-    print("✓ All relays initialized (OFF)\n")
-    
-    time.sleep(1)
     
     try:
+        for pin in all_pins:
+            # Equivalente a GPIO.setup(pin, GPIO.OUT)
+            GPIO.gpio_claim_output(H, pin)
+            # Equivalente a GPIO.output(pin, GPIO.HIGH)
+            GPIO.gpio_write(H, pin, HIGH)  # All OFF (Assumendo HIGH = OFF)
+        print("✓ All relays initialized (OFF)\n")
+        
+        time.sleep(1)
+        
         # Test Scheda 1
         print("BOARD 1 - Radio 1 Filters:")
         print("-" * 70)
@@ -40,11 +55,13 @@ def test_all_relays():
             band = BANDS[i] if i < 6 else "Spare"
             print(f"  Relay {i+1:2d} ({band:5s}) GPIO{pin:2d}: ", end="", flush=True)
             
-            GPIO.output(pin, GPIO.LOW)   # ON
+            # Equivalente a GPIO.output(pin, GPIO.LOW)
+            GPIO.gpio_write(H, pin, LOW)    # ON
             print("ON  ", end="", flush=True)
             time.sleep(0.3)
             
-            GPIO.output(pin, GPIO.HIGH)  # OFF
+            # Equivalente a GPIO.output(pin, GPIO.HIGH)
+            GPIO.gpio_write(H, pin, HIGH)  # OFF
             print("→ OFF ✓")
             time.sleep(0.1)
         
@@ -66,11 +83,13 @@ def test_all_relays():
             
             print(f"  Relay {i+9:2d} ({desc:15s}) GPIO{pin:2d}: ", end="", flush=True)
             
-            GPIO.output(pin, GPIO.LOW)   # ON
+            # Equivalente a GPIO.output(pin, GPIO.LOW)
+            GPIO.gpio_write(H, pin, LOW)    # ON
             print("ON  ", end="", flush=True)
             time.sleep(0.3)
             
-            GPIO.output(pin, GPIO.HIGH)  # OFF
+            # Equivalente a GPIO.output(pin, GPIO.HIGH)
+            GPIO.gpio_write(H, pin, HIGH)  # OFF
             print("→ OFF ✓")
             time.sleep(0.1)
         
@@ -80,7 +99,7 @@ def test_all_relays():
         print("\nDid all relays click properly?")
         response = input("(y/n): ").strip().lower()
         
-        GPIO.cleanup()
+        # Rimossa GPIO.cleanup() qui, la chiusura dell'handle è in __main__
         
         if response == 'y':
             print("\n✓ TEST PASSED - All relays working!")
@@ -95,13 +114,25 @@ def test_all_relays():
             
     except KeyboardInterrupt:
         print("\n\n⚠ Test interrupted")
-        GPIO.cleanup()
         return False
     except Exception as e:
         print(f"\n✗ ERROR: {e}")
-        GPIO.cleanup()
         return False
 
 if __name__ == "__main__":
-    success = test_all_relays()
+    success = False
+    gpio_handle = None
+    
+    try:
+        # Apri il chip GPIO 0 (standard sul Raspberry Pi 5)
+        gpio_handle = GPIO.gpiochip_open(0)
+        success = test_all_relays(gpio_handle)
+    except Exception as e:
+        print(f"Errore critico durante l'esecuzione del test: {e}")
+        success = False
+    finally:
+        # Chiudi l'handle del chip GPIO in caso di successo o fallimento (equivalente a GPIO.cleanup())
+        if gpio_handle is not None:
+            GPIO.gpiochip_close(gpio_handle)
+            
     sys.exit(0 if success else 1)
