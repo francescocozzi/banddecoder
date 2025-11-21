@@ -1,0 +1,37 @@
+[Unit]
+Description=Dual Band Decoder - Ham Radio Station Controller
+Documentation=https://github.com/francescocozzi/banddecoder
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/banddecoder
+Environment="PYTHONUNBUFFERED=1"
+
+# Main band decoder service
+ExecStart=/usr/bin/python3 /home/pi/banddecoder/src/band_decoder.py
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+StartLimitInterval=200
+StartLimitBurst=5
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=banddecoder
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Process management
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

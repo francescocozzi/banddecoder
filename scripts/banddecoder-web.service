@@ -1,0 +1,39 @@
+[Unit]
+Description=Band Decoder Web Interface
+Documentation=https://github.com/francescocozzi/banddecoder
+After=network.target banddecoder.service
+Requires=banddecoder.service
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/banddecoder
+Environment="PYTHONUNBUFFERED=1"
+Environment="FLASK_ENV=production"
+
+# Web interface service
+ExecStart=/usr/bin/python3 /home/pi/banddecoder/src/web_interface.py
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+StartLimitInterval=200
+StartLimitBurst=5
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=banddecoder-web
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Process management
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

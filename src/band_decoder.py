@@ -9,6 +9,7 @@ import time
 import signal
 import sys
 import logging
+import requests
 from typing import Optional, Dict
 from pathlib import Path
 
@@ -49,8 +50,15 @@ class BandDecoder:
         # State tracking
         self.radio1_band = "N/A"
         self.radio2_band = "N/A"
+        self.radio1_relay = None
+        self.radio2_relay = None
         self.radio1_type = "bcd"  # "bcd" or "icom"
         self.radio2_type = "bcd"
+        self.antenna_mode = "r1a_r2b"
+
+        # Web interface integration
+        self.web_enabled = False
+        self.web_url = None
 
         # Setup logging
         self.logger = None
@@ -81,12 +89,78 @@ class BandDecoder:
             log_level = self.config.get('system.log_level', 'INFO')
             logging.getLogger().setLevel(getattr(logging, log_level))
 
+            # Check if web interface is enabled
+            self.web_enabled = self.config.get('web_interface.enabled', False)
+            if self.web_enabled:
+                web_host = self.config.get('web_interface.host', 'localhost')
+                web_port = self.config.get('web_interface.port', 5000)
+                # Use localhost if host is 0.0.0.0
+                if web_host == '0.0.0.0':
+                    web_host = '127.0.0.1'
+                self.web_url = f"http://{web_host}:{web_port}"
+                self.logger.info(f"Web interface integration enabled: {self.web_url}")
+
             self.logger.info("Configuration loaded successfully")
             return True
 
         except Exception as e:
             self.logger.error(f"Failed to load configuration: {e}")
             return False
+
+    def update_web_interface(self):
+        """Send state update to web interface"""
+        if not self.web_enabled or not self.web_url:
+            return
+
+        try:
+            # Get relay states
+            board1_states = []
+            board2_states = []
+
+            if self.relay_board1:
+                for i in range(len(self.relay_board1.relay_pins)):
+                    board1_states.append(self.relay_board1.get_state(i) or False)
+
+            if self.relay_board2:
+                for i in range(len(self.relay_board2.relay_pins)):
+                    board2_states.append(self.relay_board2.get_state(i) or False)
+
+            # Prepare update data
+            data = {
+                'radio1': {
+                    'band': self.radio1_band,
+                    'bcd_value': 0,  # TODO: get from reader
+                    'relay_active': self.radio1_relay,
+                    'last_update': time.time()
+                },
+                'radio2': {
+                    'band': self.radio2_band,
+                    'bcd_value': 0,  # TODO: get from reader
+                    'relay_active': self.radio2_relay,
+                    'last_update': time.time()
+                },
+                'relays': {
+                    'board1': board1_states,
+                    'board2': board2_states
+                },
+                'antenna_mode': self.antenna_mode
+            }
+
+            # Send update
+            response = requests.post(
+                f"{self.web_url}/api/update_state",
+                json=data,
+                timeout=1
+            )
+
+            if response.status_code != 200:
+                self.logger.warning(f"Web interface update failed: {response.status_code}")
+
+        except requests.exceptions.ConnectionError:
+            # Web interface not running, silently ignore
+            pass
+        except Exception as e:
+            self.logger.debug(f"Web interface update error: {e}")
 
     def initialize_gpio(self) -> bool:
         """Initialize GPIO chip"""
@@ -234,10 +308,70 @@ class BandDecoder:
             relay_delay = self.config.get('timing.relay_delay', 0.01)
             relay_board.set_relay(relay_index, True, delay=relay_delay)
 
+            # Update state
+            if radio_num == 1:
+                self.radio1_relay = relay_index
+            else:
+                self.radio2_relay = relay_index
+
             self.logger.info(f"Radio{radio_num} switched to {band_name} (relay {relay_index})")
+
+            # Update web interface
+            self.update_web_interface()
 
         except Exception as e:
             self.logger.error(f"Failed to switch band: {e}")
+
+    def set_antenna_mode(self, mode: str):
+        """
+        Set antenna switching mode
+
+        Args:
+            mode: Antenna mode (both_a, r1a_r2b, r1b_r2a, both_b)
+        """
+        try:
+            if not self.config.get('antenna_switch.enabled'):
+                self.logger.warning("Antenna switch not enabled in configuration")
+                return
+
+            # Get relay indices for antenna control
+            relay_r1 = self.config.get('antenna_switch.relay_radio1')
+            relay_r2 = self.config.get('antenna_switch.relay_radio2')
+
+            if relay_r1 is None or relay_r2 is None:
+                self.logger.error("Antenna switch relay configuration missing")
+                return
+
+            # Antenna switch is on board 2
+            # Mode logic (assuming relay ON = Antenna B, OFF = Antenna A)
+            if mode == 'both_a':
+                # Both radios on Antenna A
+                self.relay_board2.set_relay(relay_r1, False)
+                self.relay_board2.set_relay(relay_r2, False)
+            elif mode == 'r1a_r2b':
+                # Radio 1 on A, Radio 2 on B
+                self.relay_board2.set_relay(relay_r1, False)
+                self.relay_board2.set_relay(relay_r2, True)
+            elif mode == 'r1b_r2a':
+                # Radio 1 on B, Radio 2 on A
+                self.relay_board2.set_relay(relay_r1, True)
+                self.relay_board2.set_relay(relay_r2, False)
+            elif mode == 'both_b':
+                # Both radios on Antenna B
+                self.relay_board2.set_relay(relay_r1, True)
+                self.relay_board2.set_relay(relay_r2, True)
+            else:
+                self.logger.error(f"Invalid antenna mode: {mode}")
+                return
+
+            self.antenna_mode = mode
+            self.logger.info(f"Antenna mode set to: {mode}")
+
+            # Update web interface
+            self.update_web_interface()
+
+        except Exception as e:
+            self.logger.error(f"Failed to set antenna mode: {e}")
 
     def poll_radios(self):
         """Poll radio inputs and update relays"""
@@ -291,6 +425,10 @@ class BandDecoder:
             self.logger.info(f"Polling interval: {polling_interval*1000}ms")
             self.logger.info("Press CTRL+C to stop")
             self.logger.info("")
+
+            # Set default antenna mode
+            default_antenna_mode = self.config.get('antenna_switch.default_mode', 'r1a_r2b')
+            self.set_antenna_mode(default_antenna_mode)
 
             while self.running:
                 self.poll_radios()
