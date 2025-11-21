@@ -7,7 +7,7 @@ system:
   log_file: "/var/log/banddecoder.log"
   
 hardware:
-  raspberry_pi_model: "3B"
+  raspberry_pi_model: "5"  # Updated for Raspberry Pi 5 with lgpio
   
 radios:
   radio1:

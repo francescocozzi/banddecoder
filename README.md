@@ -21,7 +21,7 @@ Automatic band decoder for dual radio operation with 6-band support (160m-10m) a
 ## 🔧 Hardware Requirements
 
 ### Components
-- Raspberry Pi 3B (or 4)
+- Raspberry Pi 5 (or 3B/4 with legacy GPIO)
 - 2× SainSmart 8-Channel Relay Modules
 - 2× ADS1115 16-bit ADC (I2C) - for ICOM radios
 - Resistors: 4× 1kΩ (BCD protection), 4× 10kΩ (voltage dividers)
@@ -60,8 +60,8 @@ Relay Board 2: GPIO 20,21,2,3,4,17,27,22
 # Update system
 sudo apt update && sudo apt upgrade -y
 
-# Install dependencies
-sudo apt install -y python3-pip python3-rpi.gpio python3-dev git
+# Install dependencies for Raspberry Pi 5
+sudo apt install -y python3-pip python3-dev git python3-lgpio
 
 # Enable I2C (optional, but recommended)
 sudo raspi-config
@@ -192,7 +192,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file.
 
 - Raspberry Pi Foundation for excellent hardware and documentation
 - Ham radio community for testing and feedback
-- Contributors to RPi.GPIO and ADS1115 libraries
+- Contributors to lgpio and ADS1115 libraries
 
 ## 📡 Ham Radio Application
 
@@ -222,7 +222,7 @@ See [docs/CALIBRATION.md](docs/CALIBRATION.md) for:
 - Band detection latency: <50ms
 - Relay switching time: 10ms
 - Antenna switching: 15ms
-- CPU usage: <5% (RPi 3B)
+- CPU usage: <5% (RPi 5)
 - Memory: ~50MB
 
 ## 🛠️ Roadmap

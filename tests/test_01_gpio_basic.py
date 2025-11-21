@@ -1,67 +1,74 @@
 #!/usr/bin/env python3
 """
 Test 1: GPIO Basic Functionality
-Verifica che RPi.GPIO funzioni correttamente
+Verifica che lgpio funzioni correttamente
 """
 
-import RPi.GPIO as GPIO
+import lgpio as GPIO  # Sostituito RPi.GPIO con lgpio
 import sys
+
+# Mappatura dei valori per chiarezza con lgpio
+HIGH = 1
+LOW = 0
+IN = 0  # Non usato direttamente, ma per chiarezza
+OUT = 1
 
 def test_gpio_basic():
     print("\n" + "="*70)
     print("TEST 1: GPIO BASIC FUNCTIONALITY")
     print("="*70 + "\n")
-    
+
+    gpio_handle = None
+
     try:
-        # Test setmode
-        print("1. Testing GPIO.setmode(GPIO.BCM)...", end=" ")
-        GPIO.setmode(GPIO.BCM)
+        # Test apertura chip GPIO
+        print("1. Testing GPIO.gpiochip_open(0)...", end=" ")
+        gpio_handle = GPIO.gpiochip_open(0)
         print("✓ OK")
-        
-        # Test warnings
-        print("2. Testing GPIO.setwarnings(False)...", end=" ")
-        GPIO.setwarnings(False)
-        print("✓ OK")
-        
+
+        # GPIO.setmode() e GPIO.setwarnings() non sono necessari con lgpio
+
         # Test setup output
-        print("3. Testing GPIO.setup(18, GPIO.OUT)...", end=" ")
-        GPIO.setup(18, GPIO.OUT)
+        print("2. Testing GPIO.gpio_claim_output(H, 18)...", end=" ")
+        GPIO.gpio_claim_output(gpio_handle, 18)
         print("✓ OK")
-        
+
         # Test output high
-        print("4. Testing GPIO.output(18, GPIO.HIGH)...", end=" ")
-        GPIO.output(18, GPIO.HIGH)
+        print("3. Testing GPIO.gpio_write(H, 18, HIGH)...", end=" ")
+        GPIO.gpio_write(gpio_handle, 18, HIGH)
         print("✓ OK")
-        
+
         # Test output low
-        print("5. Testing GPIO.output(18, GPIO.LOW)...", end=" ")
-        GPIO.output(18, GPIO.LOW)
+        print("4. Testing GPIO.gpio_write(H, 18, LOW)...", end=" ")
+        GPIO.gpio_write(gpio_handle, 18, LOW)
         print("✓ OK")
-        
+
         # Test setup input
-        print("6. Testing GPIO.setup(14, GPIO.IN)...", end=" ")
-        GPIO.setup(14, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+        print("5. Testing GPIO.gpio_claim_input(H, 14)...", end=" ")
+        GPIO.gpio_claim_input(gpio_handle, 14, GPIO.SET_PULL_DOWN)
         print("✓ OK")
-        
+
         # Test input
-        print("7. Testing GPIO.input(14)...", end=" ")
-        value = GPIO.input(14)
+        print("6. Testing GPIO.gpio_read(H, 14)...", end=" ")
+        value = GPIO.gpio_read(gpio_handle, 14)
         print(f"✓ OK (value={value})")
-        
+
         # Cleanup
-        print("8. Testing GPIO.cleanup()...", end=" ")
-        GPIO.cleanup()
+        print("7. Testing GPIO.gpiochip_close(H)...", end=" ")
+        GPIO.gpiochip_close(gpio_handle)
+        gpio_handle = None
         print("✓ OK")
-        
+
         print("\n" + "="*70)
         print("✓ ALL GPIO BASIC TESTS PASSED")
         print("="*70 + "\n")
-        
+
         return True
-        
+
     except Exception as e:
         print(f"\n✗ ERROR: {e}")
-        GPIO.cleanup()
+        if gpio_handle is not None:
+            GPIO.gpiochip_close(gpio_handle)
         return False
 
 if __name__ == "__main__":

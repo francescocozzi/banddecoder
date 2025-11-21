@@ -5,7 +5,7 @@ Legge input BCD dalle radio
 RICHIEDE: Radio collegata e accesa
 """
 
-import RPi.GPIO as GPIO
+import lgpio as GPIO  # Sostituito RPi.GPIO con lgpio
 import time
 import sys
 
@@ -19,12 +19,12 @@ BANDS = {
     11: "6m", 12: "4m", 13: "2m", 14: "70cm", 15: "23cm"
 }
 
-def read_bcd(pins_dict):
+def read_bcd(gpio_handle, pins_dict):
     """Leggi valore BCD da 4 pin"""
-    d0 = GPIO.input(pins_dict['D0'])
-    d1 = GPIO.input(pins_dict['D1'])
-    d2 = GPIO.input(pins_dict['D2'])
-    d3 = GPIO.input(pins_dict['D3'])
+    d0 = GPIO.gpio_read(gpio_handle, pins_dict['D0'])
+    d1 = GPIO.gpio_read(gpio_handle, pins_dict['D1'])
+    d2 = GPIO.gpio_read(gpio_handle, pins_dict['D2'])
+    d3 = GPIO.gpio_read(gpio_handle, pins_dict['D3'])
     return d0 + (d1 << 1) + (d2 << 2) + (d3 << 3)
 
 def test_bcd_input():
@@ -36,47 +36,52 @@ def test_bcd_input():
     print("   - Radio(s) must be powered ON")
     print("   - BCD cables must be connected")
     print("\nPress CTRL+C to stop\n")
-    
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setwarnings(False)
-    
-    # Setup BCD inputs
-    print("Setting up BCD inputs...")
-    for pin in RADIO1_BCD.values():
-        GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    for pin in RADIO2_BCD.values():
-        GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    print("✓ BCD inputs configured\n")
-    
-    time.sleep(0.5)
-    
-    print("Reading BCD values...")
-    print("Change band on radio to see values update\n")
-    print("-" * 70)
-    
-    last_r1 = None
-    last_r2 = None
-    
+
+    gpio_handle = None
+
     try:
+        # Apri il chip GPIO 0 (standard sul Raspberry Pi 5)
+        gpio_handle = GPIO.gpiochip_open(0)
+
+        # GPIO.setmode() e GPIO.setwarnings() non sono necessari con lgpio
+
+        # Setup BCD inputs
+        print("Setting up BCD inputs...")
+        for pin in RADIO1_BCD.values():
+            # Equivalente a GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+            GPIO.gpio_claim_input(gpio_handle, pin, GPIO.SET_PULL_DOWN)
+        for pin in RADIO2_BCD.values():
+            GPIO.gpio_claim_input(gpio_handle, pin, GPIO.SET_PULL_DOWN)
+        print("✓ BCD inputs configured\n")
+
+        time.sleep(0.5)
+
+        print("Reading BCD values...")
+        print("Change band on radio to see values update\n")
+        print("-" * 70)
+
+        last_r1 = None
+        last_r2 = None
+
         while True:
             # Read Radio 1
-            bcd1 = read_bcd(RADIO1_BCD)
-            d0_1 = GPIO.input(RADIO1_BCD['D0'])
-            d1_1 = GPIO.input(RADIO1_BCD['D1'])
-            d2_1 = GPIO.input(RADIO1_BCD['D2'])
-            d3_1 = GPIO.input(RADIO1_BCD['D3'])
-            
+            bcd1 = read_bcd(gpio_handle, RADIO1_BCD)
+            d0_1 = GPIO.gpio_read(gpio_handle, RADIO1_BCD['D0'])
+            d1_1 = GPIO.gpio_read(gpio_handle, RADIO1_BCD['D1'])
+            d2_1 = GPIO.gpio_read(gpio_handle, RADIO1_BCD['D2'])
+            d3_1 = GPIO.gpio_read(gpio_handle, RADIO1_BCD['D3'])
+
             # Read Radio 2
-            bcd2 = read_bcd(RADIO2_BCD)
-            d0_2 = GPIO.input(RADIO2_BCD['D0'])
-            d1_2 = GPIO.input(RADIO2_BCD['D1'])
-            d2_2 = GPIO.input(RADIO2_BCD['D2'])
-            d3_2 = GPIO.input(RADIO2_BCD['D3'])
-            
+            bcd2 = read_bcd(gpio_handle, RADIO2_BCD)
+            d0_2 = GPIO.gpio_read(gpio_handle, RADIO2_BCD['D0'])
+            d1_2 = GPIO.gpio_read(gpio_handle, RADIO2_BCD['D1'])
+            d2_2 = GPIO.gpio_read(gpio_handle, RADIO2_BCD['D2'])
+            d3_2 = GPIO.gpio_read(gpio_handle, RADIO2_BCD['D3'])
+
             # Get band names
             band1 = BANDS.get(bcd1, "???")
             band2 = BANDS.get(bcd2, "???")
-            
+
             # Print if changed
             if bcd1 != last_r1 or bcd2 != last_r2:
                 timestamp = time.strftime("%H:%M:%S")
@@ -84,21 +89,23 @@ def test_bcd_input():
                 print(f"  Radio 1: BCD={bcd1:2d} ({d3_1}{d2_1}{d1_1}{d0_1}) → {band1:5s}")
                 print(f"  Radio 2: BCD={bcd2:2d} ({d3_2}{d2_2}{d1_2}{d0_2}) → {band2:5s}")
                 print()
-                
+
                 last_r1 = bcd1
                 last_r2 = bcd2
-            
+
             time.sleep(0.1)
-            
+
     except KeyboardInterrupt:
         print("\n" + "-" * 70)
         print("\n✓ BCD INPUT TEST COMPLETED")
         print("\nFinal readings:")
         print(f"  Radio 1: BCD={bcd1} → {band1}")
         print(f"  Radio 2: BCD={bcd2} → {band2}")
-        
-        GPIO.cleanup()
-        
+
+        # Chiudi l'handle del chip GPIO (equivalente a GPIO.cleanup())
+        if gpio_handle is not None:
+            GPIO.gpiochip_close(gpio_handle)
+
         if bcd1 > 0 or bcd2 > 0:
             print("\n✓ TEST PASSED - BCD input working!")
             return True
@@ -110,10 +117,11 @@ def test_bcd_input():
             print("  3. Cables connected to correct pins")
             print("  4. 1kΩ resistors in place")
             return False
-            
+
     except Exception as e:
         print(f"\n✗ ERROR: {e}")
-        GPIO.cleanup()
+        if gpio_handle is not None:
+            GPIO.gpiochip_close(gpio_handle)
         return False
 
 if __name__ == "__main__":
