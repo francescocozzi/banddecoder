@@ -32,6 +32,11 @@ sudo systemctl enable nginx
 sudo systemctl restart nginx
 
 echo "=== Riavvio servizi banddecoder ==="
+# Ferma Flask prima (potrebbe essere ancora sulla 5000), poi avvia nginx, poi Flask su 5001
+sudo systemctl stop banddecoder-web 2>/dev/null || true
+sudo systemctl enable nginx
+sudo systemctl restart nginx
+sudo systemctl reset-failed banddecoder-web 2>/dev/null || true
 sudo systemctl restart banddecoder banddecoder-web
 
 echo ""
