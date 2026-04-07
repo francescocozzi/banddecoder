@@ -6,14 +6,14 @@ Requires=banddecoder.service
 
 [Service]
 Type=simple
-User=pi
-Group=pi
-WorkingDirectory=/home/pi/banddecoder
+User=io7t
+Group=io7t
+WorkingDirectory=/home/io7t/banddecoder
 Environment="PYTHONUNBUFFERED=1"
 Environment="FLASK_ENV=production"
 
 # Web interface service
-ExecStart=/usr/bin/python3 /home/pi/banddecoder/src/web_interface.py
+ExecStart=/home/io7t/banddecoder/venv/bin/python /home/io7t/banddecoder/src/web_interface.py
 
 # Restart policy
 Restart=on-failure

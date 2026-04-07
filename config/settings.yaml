@@ -121,7 +121,7 @@ timing:
   debounce_time: 0.02     # seconds (20ms)
 
 web_interface:
-  enabled: false
+  enabled: true
   host: "0.0.0.0"
   port: 5000
   debug: false

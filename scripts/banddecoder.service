@@ -5,13 +5,13 @@ After=network.target
 
 [Service]
 Type=simple
-User=pi
-Group=pi
-WorkingDirectory=/home/pi/banddecoder
+User=io7t
+Group=io7t
+WorkingDirectory=/home/io7t/banddecoder
 Environment="PYTHONUNBUFFERED=1"
 
 # Main band decoder service
-ExecStart=/usr/bin/python3 /home/pi/banddecoder/src/band_decoder.py
+ExecStart=/home/io7t/banddecoder/venv/bin/python /home/io7t/banddecoder/src/band_decoder.py
 
 # Restart policy
 Restart=on-failure
