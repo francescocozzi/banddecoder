@@ -22,6 +22,20 @@ sudo openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
 sudo chmod 600 "$CERT_DIR/key.pem"
 sudo chmod 644 "$CERT_DIR/cert.pem"
 
+echo "=== Creazione password di accesso ==="
+if [ ! -f "$CERT_DIR/.htpasswd" ]; then
+    read -rp "Username [io7t]: " AUTH_USER
+    AUTH_USER="${AUTH_USER:-io7t}"
+    read -rsp "Password: " AUTH_PASS
+    echo
+    HASH=$(openssl passwd -apr1 "$AUTH_PASS")
+    echo "$AUTH_USER:$HASH" | sudo tee "$CERT_DIR/.htpasswd" > /dev/null
+    sudo chmod 640 "$CERT_DIR/.htpasswd"
+    echo "Credenziali salvate per utente: $AUTH_USER"
+else
+    echo "File .htpasswd già esistente — non sovrascritto"
+fi
+
 echo "=== Configurazione nginx ==="
 sudo cp "$(dirname "$0")/banddecoder-nginx.conf" "$NGINX_CONF"
 sudo ln -sf "$NGINX_CONF" /etc/nginx/sites-enabled/banddecoder
