@@ -30,6 +30,7 @@ if [ ! -f "$CERT_DIR/.htpasswd" ]; then
     echo
     HASH=$(openssl passwd -apr1 "$AUTH_PASS")
     echo "$AUTH_USER:$HASH" | sudo tee "$CERT_DIR/.htpasswd" > /dev/null
+    sudo chown root:www-data "$CERT_DIR/.htpasswd"
     sudo chmod 640 "$CERT_DIR/.htpasswd"
     echo "Credenziali salvate per utente: $AUTH_USER"
 else
