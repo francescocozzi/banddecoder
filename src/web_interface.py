@@ -48,6 +48,8 @@ state = {
         'board2': [False] * 8
     },
     'antenna_mode': 'r1a_r2b',
+    'manual_mode': False,
+    'pending_relay_command': None,  # {'board': 1, 'relay': 0, 'state': True}
     'system': {
         'uptime': 0,
         'start_time': time.time(),
@@ -273,34 +275,91 @@ def api_system_restart():
         }), 500
 
 
+@app.route('/api/manual/mode', methods=['GET', 'POST'])
+def api_manual_mode():
+    """Get or set manual mode"""
+    try:
+        if request.method == 'GET':
+            return jsonify({'success': True, 'manual_mode': state['manual_mode']})
+
+        data = request.get_json()
+        enabled = data.get('enabled', False)
+        state['manual_mode'] = enabled
+        if not enabled:
+            state['pending_relay_command'] = None
+        logger.info(f"Manual mode: {'ON' if enabled else 'OFF'}")
+        return jsonify({'success': True, 'manual_mode': state['manual_mode']})
+
+    except Exception as e:
+        logger.error(f"Error setting manual mode: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/manual/relay', methods=['POST'])
+def api_manual_relay():
+    """Queue a manual relay command (executed by band_decoder with interlock check)"""
+    try:
+        if not state['manual_mode']:
+            return jsonify({'success': False, 'error': 'Manual mode not active'}), 400
+
+        data = request.get_json()
+        board = data.get('board')
+        relay = data.get('relay')
+        relay_state = data.get('state')
+
+        if board not in [1, 2] or not isinstance(relay, int) or relay < 0 or relay >= 8:
+            return jsonify({'success': False, 'error': 'Invalid parameters'}), 400
+
+        state['pending_relay_command'] = {'board': board, 'relay': relay, 'state': relay_state}
+        logger.info(f"Manual relay queued: Board{board} Relay{relay} → {relay_state}")
+        return jsonify({'success': True})
+
+    except Exception as e:
+        logger.error(f"Error queuing relay command: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/update_state', methods=['POST'])
 def api_update_state():
     """
-    Update state from band decoder main process
-    This endpoint is called by the band decoder to update the web interface
+    Update state from band decoder main process.
+    Returns manual_mode flag and any pending relay command to be executed.
     """
     try:
         data = request.get_json()
 
-        # Update radio states
-        if 'radio1' in data:
-            state['radio1'].update(data['radio1'])
-            state['radio1']['last_update'] = time.time()
+        if not state['manual_mode']:
+            # Auto mode: accept all updates from band_decoder
+            if 'radio1' in data:
+                state['radio1'].update(data['radio1'])
+                state['radio1']['last_update'] = time.time()
+            if 'radio2' in data:
+                state['radio2'].update(data['radio2'])
+                state['radio2']['last_update'] = time.time()
+            if 'relays' in data:
+                state['relays'].update(data['relays'])
+            if 'antenna_mode' in data:
+                state['antenna_mode'] = data['antenna_mode']
+        else:
+            # Manual mode: update band/BCD display only, not relay states
+            if 'radio1' in data:
+                state['radio1']['band'] = data['radio1'].get('band', state['radio1']['band'])
+                state['radio1']['bcd_value'] = data['radio1'].get('bcd_value', state['radio1']['bcd_value'])
+                state['radio1']['last_update'] = time.time()
+            if 'radio2' in data:
+                state['radio2']['band'] = data['radio2'].get('band', state['radio2']['band'])
+                state['radio2']['bcd_value'] = data['radio2'].get('bcd_value', state['radio2']['bcd_value'])
+                state['radio2']['last_update'] = time.time()
 
-        if 'radio2' in data:
-            state['radio2'].update(data['radio2'])
-            state['radio2']['last_update'] = time.time()
-
-        # Update relay states
-        if 'relays' in data:
-            state['relays'].update(data['relays'])
-
-        # Update antenna mode
-        if 'antenna_mode' in data:
-            state['antenna_mode'] = data['antenna_mode']
+        # Return manual mode flag and pending command (clears it after sending)
+        pending = state['pending_relay_command']
+        if pending:
+            state['pending_relay_command'] = None
 
         return jsonify({
-            'success': True
+            'success': True,
+            'manual_mode': state['manual_mode'],
+            'relay_command': pending
         })
 
     except Exception as e:

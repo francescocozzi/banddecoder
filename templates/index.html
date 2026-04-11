@@ -87,7 +87,15 @@
 
         <!-- Relay Status Grid -->
         <div class="relay-section">
-            <h2>Relay Status</h2>
+            <div class="relay-section-header">
+                <h2>Relay Status</h2>
+                <button id="manualModeBtn" class="btn-manual" onclick="toggleManualMode()">
+                    <span id="manualModeLabel">AUTO</span>
+                </button>
+            </div>
+            <div id="manualModeBanner" class="manual-banner" style="display:none">
+                ⚠️ Manual mode active — automatic band switching disabled
+            </div>
             <div class="relay-grid">
                 <div class="relay-board">
                     <h3>Board 1 - Radio 1 Filters</h3>

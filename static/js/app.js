@@ -3,6 +3,8 @@
 const API_BASE = '';
 let config = null;
 let updateInterval = null;
+let manualMode = false;
+let lastRelayStates = { board1: Array(8).fill(false), board2: Array(8).fill(false) };
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -59,6 +61,12 @@ async function updateStatus() {
 
 // Update display with new data
 function updateDisplay(data) {
+    // Sync manual mode from server state
+    if (typeof data.manual_mode !== 'undefined' && data.manual_mode !== manualMode) {
+        manualMode = data.manual_mode;
+        applyManualModeUI();
+    }
+
     // Update Radio 1
     updateRadio(1, data.radio1);
 
@@ -66,7 +74,10 @@ function updateDisplay(data) {
     updateRadio(2, data.radio2);
 
     // Update relays
-    updateRelays(data.relays);
+    if (data.relays) {
+        lastRelayStates = data.relays;
+        updateRelays(data.relays);
+    }
 
     // Update antenna mode
     updateAntennaDisplay(data.antenna_mode);
@@ -115,47 +126,61 @@ function updateRelays(relaysData) {
 // Update single relay board
 function updateRelayBoard(boardNum, relayStates) {
     const container = document.getElementById(`board${boardNum}Relays`);
-
     if (!container) return;
+
+    const otherBoardStates = boardNum === 1 ? lastRelayStates.board2 : lastRelayStates.board1;
+    const bandNames = config ? config.bands.map(b => b.name) : [];
+    const numBands = config ? config.bands.length : 8;
 
     // Create relay items if not exist
     if (container.children.length === 0) {
-        const bandNames = config ? config.bands.map(b => b.name) : [];
-
         relayStates.forEach((state, index) => {
             const relayItem = document.createElement('div');
             relayItem.className = 'relay-item';
             relayItem.id = `board${boardNum}_relay${index}`;
-
             const bandName = bandNames[index] || `R${index}`;
-
             relayItem.innerHTML = `
                 <div class="relay-number">${index}</div>
                 <div class="relay-label">${bandName}</div>
                 <div class="relay-status ${state ? 'on' : 'off'}">${state ? 'ON' : 'OFF'}</div>
             `;
-
             container.appendChild(relayItem);
         });
-    } else {
-        // Update existing relay items
-        relayStates.forEach((state, index) => {
-            const relayItem = document.getElementById(`board${boardNum}_relay${index}`);
-            if (relayItem) {
-                const statusElement = relayItem.querySelector('.relay-status');
-                if (statusElement) {
-                    statusElement.textContent = state ? 'ON' : 'OFF';
-                    statusElement.className = `relay-status ${state ? 'on' : 'off'}`;
-                }
-
-                if (state) {
-                    relayItem.classList.add('active');
-                } else {
-                    relayItem.classList.remove('active');
-                }
-            }
-        });
     }
+
+    // Update all relay items
+    relayStates.forEach((state, index) => {
+        const relayItem = document.getElementById(`board${boardNum}_relay${index}`);
+        if (!relayItem) return;
+
+        const statusElement = relayItem.querySelector('.relay-status');
+
+        // Only show band relays as interactive (not antenna switch relays)
+        const isBandRelay = index < numBands;
+        const isInterlocked = isBandRelay && manualMode && (otherBoardStates[index] === true);
+
+        // Update visual state
+        relayItem.classList.toggle('active', state);
+        relayItem.classList.toggle('manual-clickable', manualMode && isBandRelay && !isInterlocked);
+        relayItem.classList.toggle('interlock-blocked', isInterlocked);
+
+        if (statusElement) {
+            if (isInterlocked) {
+                statusElement.textContent = 'LOCK';
+                statusElement.className = 'relay-status blocked';
+            } else {
+                statusElement.textContent = state ? 'ON' : 'OFF';
+                statusElement.className = `relay-status ${state ? 'on' : 'off'}`;
+            }
+        }
+
+        // Set click handler in manual mode
+        if (manualMode && isBandRelay && !isInterlocked) {
+            relayItem.onclick = () => setManualRelay(boardNum, index, !state);
+        } else {
+            relayItem.onclick = null;
+        }
+    });
 }
 
 // Update antenna display
@@ -270,6 +295,56 @@ function loadAntennaMode() {
     const defaultMode = config.antenna_switch.default_mode;
     if (defaultMode) {
         select.value = defaultMode;
+    }
+}
+
+// Toggle manual mode
+async function toggleManualMode() {
+    const newMode = !manualMode;
+    try {
+        const response = await fetch(`${API_BASE}/api/manual/mode`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled: newMode })
+        });
+        const result = await response.json();
+        if (result.success) {
+            manualMode = result.manual_mode;
+            applyManualModeUI();
+        }
+    } catch (error) {
+        console.error('Error toggling manual mode:', error);
+    }
+}
+
+// Apply manual mode visual state
+function applyManualModeUI() {
+    const btn = document.getElementById('manualModeBtn');
+    const label = document.getElementById('manualModeLabel');
+    const banner = document.getElementById('manualModeBanner');
+
+    if (btn) btn.classList.toggle('active', manualMode);
+    if (label) label.textContent = manualMode ? 'MANUAL' : 'AUTO';
+    if (banner) banner.style.display = manualMode ? 'block' : 'none';
+
+    // Refresh relay display with current states
+    updateRelays(lastRelayStates);
+}
+
+// Send manual relay command
+async function setManualRelay(board, relay, state) {
+    try {
+        const response = await fetch(`${API_BASE}/api/manual/relay`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ board, relay, state })
+        });
+        const result = await response.json();
+        if (!result.success) {
+            console.error('Manual relay error:', result.error);
+        }
+    } catch (error) {
+        console.error('Error sending relay command:', error);
     }
 }
 

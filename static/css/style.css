@@ -233,10 +233,58 @@ header h1 {
     margin: 40px 0;
 }
 
+.relay-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.relay-section-header h2 {
+    font-size: 1.8rem;
+    margin: 0;
+}
+
 .relay-section h2 {
     font-size: 1.8rem;
     margin-bottom: 20px;
     text-align: center;
+}
+
+.btn-manual {
+    padding: 8px 20px;
+    background: var(--dark-bg);
+    color: var(--text-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+}
+
+.btn-manual:hover {
+    border-color: var(--warning-color);
+    color: var(--warning-color);
+}
+
+.btn-manual.active {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: var(--warning-color);
+    color: var(--warning-color);
+}
+
+.manual-banner {
+    text-align: center;
+    padding: 10px;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid var(--warning-color);
+    border-radius: 8px;
+    color: var(--warning-color);
+    margin-bottom: 20px;
+    font-size: 0.95rem;
 }
 
 .relay-grid {
@@ -307,6 +355,32 @@ header h1 {
 .relay-status.off {
     background: var(--relay-off);
     color: var(--text-secondary);
+}
+
+/* Manual mode relay states */
+.relay-item.manual-clickable {
+    cursor: pointer;
+}
+
+.relay-item.manual-clickable:hover {
+    border-color: var(--warning-color);
+    background: rgba(245, 158, 11, 0.08);
+}
+
+.relay-item.interlock-blocked {
+    opacity: 0.45;
+    cursor: not-allowed;
+    border-color: var(--danger-color) !important;
+}
+
+.relay-item.interlock-blocked:hover {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: var(--danger-color) !important;
+}
+
+.relay-status.blocked {
+    background: var(--danger-color);
+    color: white;
 }
 
 /* Band Table */

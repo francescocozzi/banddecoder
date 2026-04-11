@@ -59,6 +59,8 @@ class BandDecoder:
         # Web interface integration
         self.web_enabled = False
         self.web_url = None
+        self.manual_mode = False
+        self.web_update_tick = 0
 
         # Setup logging
         self.logger = None
@@ -146,14 +148,20 @@ class BandDecoder:
                 'antenna_mode': self.antenna_mode
             }
 
-            # Send update
+            # Send update, read back manual_mode and any pending relay command
             response = requests.post(
                 f"{self.web_url}/api/update_state",
                 json=data,
                 timeout=1
             )
 
-            if response.status_code != 200:
+            if response.status_code == 200:
+                resp = response.json()
+                self.manual_mode = resp.get('manual_mode', False)
+                relay_cmd = resp.get('relay_command')
+                if relay_cmd:
+                    self.execute_manual_relay(relay_cmd)
+            else:
                 self.logger.warning(f"Web interface update failed: {response.status_code}")
 
         except requests.exceptions.ConnectionError:
@@ -161,6 +169,41 @@ class BandDecoder:
             pass
         except Exception as e:
             self.logger.debug(f"Web interface update error: {e}")
+
+    def execute_manual_relay(self, cmd: dict):
+        """
+        Execute a manual relay command with interlock check.
+        Interlock: relay index N on boardA is blocked if relay N on boardB is already ON.
+        """
+        board = cmd.get('board')
+        relay_index = cmd.get('relay')
+        new_state = cmd.get('state')
+
+        relay_board = self.relay_board1 if board == 1 else self.relay_board2
+        other_board = self.relay_board2 if board == 1 else self.relay_board1
+
+        if not relay_board:
+            return
+
+        # Interlock check: block activation if the same relay is ON on the other board
+        if new_state and other_board:
+            if other_board.get_state(relay_index):
+                self.logger.warning(
+                    f"INTERLOCK BLOCK: relay {relay_index} already active on "
+                    f"{'board2' if board == 1 else 'board1'} — command rejected"
+                )
+                return
+
+        # Turn off all band relays on this board first (exclusive selection)
+        if new_state:
+            num_bands = len(self.config.get('bands'))
+            for i in range(num_bands):
+                if i != relay_index:
+                    relay_board.set_relay(i, False)
+
+        relay_board.set_relay(relay_index, new_state)
+        self.logger.info(f"Manual relay: Board{board} Relay{relay_index} → {new_state}")
+        self.update_web_interface()
 
     def initialize_gpio(self) -> bool:
         """Initialize GPIO chip"""
@@ -374,7 +417,7 @@ class BandDecoder:
             self.logger.error(f"Failed to set antenna mode: {e}")
 
     def poll_radios(self):
-        """Poll radio inputs and update relays"""
+        """Poll radio inputs and update relays. In manual mode, skips relay switching."""
         try:
             # Poll Radio 1
             if self.radio1_type == "bcd":
@@ -383,7 +426,8 @@ class BandDecoder:
                     _, band = result
                     if band != self.radio1_band and band != "N/A":
                         self.radio1_band = band
-                        self.switch_band(1, band)
+                        if not self.manual_mode:
+                            self.switch_band(1, band)
 
             elif self.radio1_type == "icom" and self.radio1_icom:
                 result = self.radio1_icom.read_debounced()
@@ -391,7 +435,8 @@ class BandDecoder:
                     _, band = result
                     if band != self.radio1_band and band != "N/A":
                         self.radio1_band = band
-                        self.switch_band(1, band)
+                        if not self.manual_mode:
+                            self.switch_band(1, band)
 
             # Poll Radio 2
             if self.radio2_type == "bcd":
@@ -400,7 +445,8 @@ class BandDecoder:
                     _, band = result
                     if band != self.radio2_band and band != "N/A":
                         self.radio2_band = band
-                        self.switch_band(2, band)
+                        if not self.manual_mode:
+                            self.switch_band(2, band)
 
             elif self.radio2_type == "icom" and self.radio2_icom:
                 result = self.radio2_icom.read_debounced()
@@ -408,7 +454,8 @@ class BandDecoder:
                     _, band = result
                     if band != self.radio2_band and band != "N/A":
                         self.radio2_band = band
-                        self.switch_band(2, band)
+                        if not self.manual_mode:
+                            self.switch_band(2, band)
 
         except Exception as e:
             self.logger.error(f"Error polling radios: {e}")
@@ -432,6 +479,15 @@ class BandDecoder:
 
             while self.running:
                 self.poll_radios()
+
+                # In manual mode, call update_web_interface periodically
+                # to receive pending relay commands (every ~500ms)
+                if self.manual_mode and self.web_enabled:
+                    self.web_update_tick += 1
+                    if self.web_update_tick >= 10:
+                        self.web_update_tick = 0
+                        self.update_web_interface()
+
                 time.sleep(polling_interval)
 
         except KeyboardInterrupt:
