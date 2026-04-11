@@ -194,11 +194,9 @@ class BandDecoder:
                 )
                 return
 
-        # For band relays (0..numBands-1): exclusive selection — turn off others
-        # For non-band relays (antenna switch etc.): toggle directly
-        num_bands = len(self.config.get('bands'))
-        if new_state and relay_index < num_bands:
-            for i in range(num_bands):
+        # Exclusive selection: only one relay active per board at a time
+        if new_state:
+            for i in range(8):
                 if i != relay_index:
                     relay_board.set_relay(i, False)
 
