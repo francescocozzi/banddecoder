@@ -328,28 +328,23 @@ def api_update_state():
     try:
         data = request.get_json()
 
+        # Always update radio band/BCD info
+        if 'radio1' in data:
+            state['radio1'].update(data['radio1'])
+            state['radio1']['last_update'] = time.time()
+        if 'radio2' in data:
+            state['radio2'].update(data['radio2'])
+            state['radio2']['last_update'] = time.time()
+
+        # Always accept relay states from band_decoder: it reads actual hardware state
+        # In manual mode, band_decoder skips switch_band() so these updates
+        # only arrive after manual commands are executed
+        if 'relays' in data:
+            state['relays'].update(data['relays'])
+
         if not state['manual_mode']:
-            # Auto mode: accept all updates from band_decoder
-            if 'radio1' in data:
-                state['radio1'].update(data['radio1'])
-                state['radio1']['last_update'] = time.time()
-            if 'radio2' in data:
-                state['radio2'].update(data['radio2'])
-                state['radio2']['last_update'] = time.time()
-            if 'relays' in data:
-                state['relays'].update(data['relays'])
             if 'antenna_mode' in data:
                 state['antenna_mode'] = data['antenna_mode']
-        else:
-            # Manual mode: update band/BCD display only, not relay states
-            if 'radio1' in data:
-                state['radio1']['band'] = data['radio1'].get('band', state['radio1']['band'])
-                state['radio1']['bcd_value'] = data['radio1'].get('bcd_value', state['radio1']['bcd_value'])
-                state['radio1']['last_update'] = time.time()
-            if 'radio2' in data:
-                state['radio2']['band'] = data['radio2'].get('band', state['radio2']['band'])
-                state['radio2']['bcd_value'] = data['radio2'].get('bcd_value', state['radio2']['bcd_value'])
-                state['radio2']['last_update'] = time.time()
 
         # Return manual mode flag and pending command (clears it after sending)
         pending = state['pending_relay_command']
