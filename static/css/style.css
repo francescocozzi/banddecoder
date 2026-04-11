@@ -36,28 +36,28 @@ body {
 
 /* Header */
 header {
-    text-align: center;
-    margin-bottom: 40px;
-    padding: 30px;
+    margin-bottom: 24px;
+    padding: 16px 24px;
     background: var(--card-bg);
-    border-radius: 15px;
+    border-radius: 12px;
     border: 1px solid var(--border-color);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
+.header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
 header h1 {
-    font-size: 2.5rem;
-    margin-bottom: 10px;
+    font-size: 1.4rem;
+    margin: 0;
     background: linear-gradient(135deg, #3b82f6, #8b5cf6);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-}
-
-.subtitle {
-    color: var(--text-secondary);
-    font-size: 1.1rem;
-    margin-bottom: 20px;
 }
 
 .status-badge {
