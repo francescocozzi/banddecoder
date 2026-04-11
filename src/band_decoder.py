@@ -480,9 +480,9 @@ class BandDecoder:
             while self.running:
                 self.poll_radios()
 
-                # In manual mode, call update_web_interface periodically
-                # to receive pending relay commands (every ~500ms)
-                if self.manual_mode and self.web_enabled:
+                # Periodic web interface sync: detect manual mode changes
+                # and receive relay commands (every ~500ms regardless of mode)
+                if self.web_enabled:
                     self.web_update_tick += 1
                     if self.web_update_tick >= 10:
                         self.web_update_tick = 0
