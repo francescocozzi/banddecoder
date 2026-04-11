@@ -113,7 +113,7 @@ antenna_switch:
     r1a_r2b: "Radio1→AntA, Radio2→AntB"
     r1b_r2a: "Radio1→AntB, Radio2→AntA"
     both_b: "Both radios on Antenna B"
-  default_mode: "r1a_r2b"
+  default_mode: "both_a"
 
 timing:
   polling_interval: 0.05  # seconds (50ms)
