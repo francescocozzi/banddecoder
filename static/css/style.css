@@ -1,18 +1,19 @@
-/* Band Decoder Web Interface Styles */
+/* IO7T Automatic Station Switch Controller — Neumorphic Style */
 
 :root {
-    --primary-color: #2563eb;
-    --secondary-color: #10b981;
-    --danger-color: #ef4444;
-    --warning-color: #f59e0b;
-    --dark-bg: #1f2937;
-    --card-bg: #111827;
-    --text-primary: #f9fafb;
-    --text-secondary: #9ca3af;
-    --border-color: #374151;
-    --success-green: #22c55e;
-    --relay-on: #3b82f6;
-    --relay-off: #6b7280;
+    --bg: #e0e5ec;
+    --surface: #e0e5ec;
+    --shadow-dark: #b8bec7;
+    --shadow-light: #ffffff;
+    --text-primary: #2d3748;
+    --text-secondary: #718096;
+    --accent: #4a6cf7;
+    --accent-soft: rgba(74, 108, 247, 0.15);
+    --success: #38a169;
+    --danger: #e53e3e;
+    --warning: #d69e2e;
+    --relay-on: #4a6cf7;
+    --relay-off: #a0aec0;
 }
 
 * {
@@ -23,7 +24,7 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    background: var(--bg);
     color: var(--text-primary);
     min-height: 100vh;
     padding: 20px;
@@ -34,14 +35,26 @@ body {
     margin: 0 auto;
 }
 
-/* Header */
+/* ── Neumorphic mixins ── */
+.neu-raised {
+    background: var(--surface);
+    box-shadow: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
+    border-radius: 16px;
+}
+
+.neu-inset {
+    background: var(--surface);
+    box-shadow: inset 4px 4px 10px var(--shadow-dark), inset -4px -4px 10px var(--shadow-light);
+    border-radius: 12px;
+}
+
+/* ── Header ── */
 header {
     margin-bottom: 24px;
-    padding: 16px 24px;
-    background: var(--card-bg);
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    padding: 16px 28px;
+    background: var(--surface);
+    border-radius: 16px;
+    box-shadow: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
 }
 
 .header-inner {
@@ -52,262 +65,184 @@ header {
 }
 
 header h1 {
-    font-size: 1.4rem;
-    margin: 0;
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
 }
 
 .status-badge {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 16px;
-    background: rgba(34, 197, 94, 0.1);
-    border: 1px solid var(--success-green);
-    border-radius: 20px;
-    font-size: 0.9rem;
+    padding: 8px 18px;
+    border-radius: 30px;
+    background: var(--surface);
+    box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
 }
 
 .status-dot {
-    width: 10px;
-    height: 10px;
-    background: var(--success-green);
+    width: 9px;
+    height: 9px;
+    background: var(--success);
     border-radius: 50%;
     animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    50% { opacity: 0.4; }
 }
 
-/* Main Grid */
+/* ── Main Grid ── */
 .main-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 20px;
-    margin-bottom: 30px;
+    margin-bottom: 24px;
 }
 
-/* Cards */
+/* ── Cards ── */
 .card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
+    background: var(--surface);
+    border-radius: 16px;
     padding: 24px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+    box-shadow: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
 }
 
 .card h2 {
-    font-size: 1.3rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-secondary);
     margin-bottom: 20px;
-    color: var(--text-primary);
-    border-bottom: 2px solid var(--border-color);
-    padding-bottom: 10px;
 }
 
-/* Radio Cards */
+/* ── Radio Cards ── */
 .radio-display {
     text-align: center;
 }
 
 .band-display {
-    font-size: 3rem;
-    font-weight: bold;
-    color: var(--primary-color);
-    margin: 20px 0;
-    text-shadow: 0 0 20px rgba(37, 99, 235, 0.5);
+    font-size: 2.8rem;
+    font-weight: 800;
+    color: var(--accent);
+    margin: 14px 0;
     font-family: 'Courier New', monospace;
+    letter-spacing: -1px;
 }
 
 .bcd-value, .relay-active {
-    font-size: 1rem;
+    font-size: 0.85rem;
     color: var(--text-secondary);
-    margin: 10px 0;
+    margin: 6px 0;
 }
 
 .bcd-value span, .relay-active span {
     color: var(--text-primary);
-    font-weight: bold;
+    font-weight: 600;
 }
 
 .last-update {
-    margin-top: 15px;
-    font-size: 0.85rem;
+    margin-top: 14px;
+    font-size: 0.75rem;
     color: var(--text-secondary);
-    font-style: italic;
 }
 
-/* Antenna Card */
-.antenna-selector {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.antenna-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px;
-    background: rgba(59, 130, 246, 0.05);
-    border-left: 3px solid var(--primary-color);
-    border-radius: 4px;
-}
-
-.antenna-radio-label {
-    font-size: 1rem;
-    font-weight: bold;
-    min-width: 60px;
-}
-
-.antenna-btn-group {
-    display: flex;
-    gap: 8px;
-}
-
-.btn-antenna {
-    padding: 8px 20px;
-    background: var(--dark-bg);
-    color: var(--text-secondary);
-    border: 2px solid var(--border-color);
-    border-radius: 6px;
-    font-size: 0.95rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-antenna:hover {
-    border-color: var(--primary-color);
-    color: var(--text-primary);
-}
-
-.btn-antenna.active {
-    background: rgba(59, 130, 246, 0.2);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
-}
-
-.antenna-interlock-msg {
-    margin-top: 12px;
-    padding: 8px 12px;
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid var(--danger-color);
-    border-radius: 6px;
-    color: var(--danger-color);
-    font-size: 0.85rem;
-    text-align: center;
-}
-
-/* System Card */
+/* ── System Card ── */
 .system-info {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 
 .info-row {
     display: flex;
     justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border-color);
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    font-size: 0.88rem;
 }
 
-.info-row:last-child {
-    border-bottom: none;
-}
+.info-row:last-child { border-bottom: none; }
 
-.info-row .label {
-    color: var(--text-secondary);
-}
-
-.info-row .value {
-    font-weight: bold;
-    color: var(--text-primary);
-}
+.info-row .label { color: var(--text-secondary); }
+.info-row .value { font-weight: 600; }
 
 .btn-restart {
     width: 100%;
-    padding: 12px;
-    background: var(--danger-color);
-    color: white;
+    padding: 11px;
+    background: var(--surface);
+    color: var(--danger);
     border: none;
-    border-radius: 6px;
-    font-size: 1rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    box-shadow: 4px 4px 10px var(--shadow-dark), -4px -4px 10px var(--shadow-light);
+    transition: box-shadow 0.2s;
 }
 
-.btn-restart:hover {
-    background: #dc2626;
+.btn-restart:active {
+    box-shadow: inset 3px 3px 8px var(--shadow-dark), inset -3px -3px 8px var(--shadow-light);
 }
 
-/* Relay Section */
+/* ── Relay Section ── */
 .relay-section {
-    margin: 40px 0;
+    margin-bottom: 24px;
 }
 
 .relay-section-header {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 20px;
-    margin-bottom: 20px;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding: 0 4px;
 }
 
 .relay-section-header h2 {
-    font-size: 1.8rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-secondary);
     margin: 0;
 }
 
-.relay-section h2 {
-    font-size: 1.8rem;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
 .btn-manual {
-    padding: 8px 20px;
-    background: var(--dark-bg);
+    padding: 9px 22px;
+    background: var(--surface);
     color: var(--text-secondary);
-    border: 2px solid var(--border-color);
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s;
+    border: none;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 700;
     letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 4px 4px 10px var(--shadow-dark), -4px -4px 10px var(--shadow-light);
+    transition: all 0.2s;
 }
 
-.btn-manual:hover {
-    border-color: var(--warning-color);
-    color: var(--warning-color);
+.btn-manual:active {
+    box-shadow: inset 3px 3px 8px var(--shadow-dark), inset -3px -3px 8px var(--shadow-light);
 }
 
 .btn-manual.active {
-    background: rgba(245, 158, 11, 0.15);
-    border-color: var(--warning-color);
-    color: var(--warning-color);
+    color: var(--warning);
+    box-shadow: inset 3px 3px 8px var(--shadow-dark), inset -3px -3px 8px var(--shadow-light);
 }
 
 .manual-banner {
     text-align: center;
     padding: 10px;
-    background: rgba(245, 158, 11, 0.1);
-    border: 1px solid var(--warning-color);
-    border-radius: 8px;
-    color: var(--warning-color);
-    margin-bottom: 20px;
-    font-size: 0.95rem;
+    background: rgba(214, 158, 46, 0.1);
+    border-radius: 10px;
+    color: var(--warning);
+    margin-bottom: 16px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    box-shadow: inset 2px 2px 6px var(--shadow-dark), inset -2px -2px 6px var(--shadow-light);
 }
 
 .relay-grid {
@@ -317,67 +252,77 @@ header h1 {
 }
 
 .relay-board {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
+    background: var(--surface);
+    border-radius: 16px;
     padding: 24px;
+    box-shadow: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
 }
 
 .relay-board h3 {
-    margin-bottom: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
     color: var(--text-secondary);
-    font-size: 1.1rem;
+    margin-bottom: 18px;
 }
 
 .relay-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+    gap: 14px;
 }
 
 .relay-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 12px;
-    background: var(--dark-bg);
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
-    transition: all 0.3s;
+    padding: 14px 8px;
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: 4px 4px 10px var(--shadow-dark), -4px -4px 10px var(--shadow-light);
+    transition: all 0.25s;
 }
 
 .relay-item.active {
-    background: rgba(59, 130, 246, 0.2);
-    border-color: var(--relay-on);
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+    box-shadow: inset 4px 4px 10px var(--shadow-dark), inset -4px -4px 10px var(--shadow-light);
 }
 
 .relay-number {
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin-bottom: 5px;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.relay-item.active .relay-number {
+    color: var(--accent);
 }
 
 .relay-label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 600;
     color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .relay-status {
-    margin-top: 5px;
-    font-size: 0.8rem;
-    padding: 2px 8px;
-    border-radius: 10px;
+    margin-top: 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
 }
 
 .relay-status.on {
-    background: var(--relay-on);
-    color: white;
+    background: var(--accent-soft);
+    color: var(--accent);
 }
 
 .relay-status.off {
-    background: var(--relay-off);
-    color: var(--text-secondary);
+    color: var(--relay-off);
 }
 
 /* Manual mode relay states */
@@ -386,118 +331,93 @@ header h1 {
 }
 
 .relay-item.manual-clickable:hover {
-    border-color: var(--warning-color);
-    background: rgba(245, 158, 11, 0.08);
+    box-shadow: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
+    transform: translateY(-1px);
 }
 
 .relay-item.interlock-blocked {
-    opacity: 0.45;
+    opacity: 0.5;
     cursor: not-allowed;
-    border-color: var(--danger-color) !important;
-}
-
-.relay-item.interlock-blocked:hover {
-    background: rgba(239, 68, 68, 0.08);
-    border-color: var(--danger-color) !important;
 }
 
 .relay-status.blocked {
-    background: var(--danger-color);
-    color: white;
+    background: rgba(229, 62, 62, 0.12);
+    color: var(--danger);
 }
 
-/* Band Table */
+/* ── Band Table ── */
 .band-section {
-    margin: 40px 0;
+    margin-bottom: 24px;
 }
 
 .band-section h2 {
-    font-size: 1.8rem;
-    margin-bottom: 20px;
-    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    padding: 0 4px;
 }
 
 .band-table {
     width: 100%;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
+    background: var(--surface);
+    border-radius: 16px;
     overflow: hidden;
     border-collapse: collapse;
+    box-shadow: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
 }
 
 .band-table thead {
-    background: var(--dark-bg);
+    background: rgba(0,0,0,0.03);
 }
 
 .band-table th {
-    padding: 15px;
+    padding: 14px 18px;
     text-align: left;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
     color: var(--text-secondary);
-    font-weight: 600;
-    border-bottom: 2px solid var(--border-color);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
 }
 
 .band-table td {
-    padding: 15px;
-    border-bottom: 1px solid var(--border-color);
+    padding: 13px 18px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    font-size: 0.9rem;
 }
 
-.band-table tr:last-child td {
-    border-bottom: none;
-}
+.band-table tr:last-child td { border-bottom: none; }
 
-.band-table tr:hover {
-    background: rgba(59, 130, 246, 0.05);
-}
+.band-table tr:hover { background: rgba(74, 108, 247, 0.04); }
 
 .band-name {
-    font-weight: bold;
-    color: var(--primary-color);
+    font-weight: 700;
+    color: var(--accent);
 }
 
-/* Footer */
+/* ── Footer ── */
 footer {
     text-align: center;
-    margin-top: 60px;
-    padding: 30px;
+    margin-top: 40px;
+    padding: 20px;
     color: var(--text-secondary);
-    border-top: 1px solid var(--border-color);
+    font-size: 0.82rem;
 }
 
 footer a {
-    color: var(--primary-color);
+    color: var(--accent);
     text-decoration: none;
 }
 
-footer a:hover {
-    text-decoration: underline;
-}
-
-/* Responsive */
+/* ── Responsive ── */
 @media (max-width: 768px) {
-    header h1 {
-        font-size: 1.8rem;
-    }
-
-    .main-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .relay-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .relay-list {
-        grid-template-columns: repeat(4, 1fr);
-    }
-
-    .band-table {
-        font-size: 0.85rem;
-    }
-
-    .band-table th,
-    .band-table td {
-        padding: 10px;
-    }
+    header h1 { font-size: 1rem; }
+    .main-grid { grid-template-columns: 1fr; }
+    .relay-grid { grid-template-columns: 1fr; }
+    .relay-list { grid-template-columns: repeat(4, 1fr); }
+    .band-table th, .band-table td { padding: 10px 12px; font-size: 0.82rem; }
 }
