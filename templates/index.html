@@ -72,23 +72,23 @@
             <!-- Antenna Switch Card -->
             <div class="card antenna-card">
                 <h2>Antenna Switch</h2>
-                <div class="antenna-mode">
-                    <label for="antennaMode">Mode:</label>
-                    <select id="antennaMode" onchange="changeAntennaMode()">
-                        <option value="both_a">Both on Antenna A</option>
-                        <option value="r1a_r2b" selected>R1→A, R2→B</option>
-                        <option value="r1b_r2a">R1→B, R2→A</option>
-                        <option value="both_b">Both on Antenna B</option>
-                    </select>
-                </div>
-                <div class="antenna-diagram">
-                    <div class="antenna-line">
-                        <span>Radio 1</span> → <span id="r1Antenna">A</span>
+                <div class="antenna-selector">
+                    <div class="antenna-row">
+                        <span class="antenna-radio-label">Radio 1</span>
+                        <div class="antenna-btn-group">
+                            <button id="r1AntA" class="btn-antenna active" onclick="setAntenna(1,'A')">ANT A</button>
+                            <button id="r1AntB" class="btn-antenna" onclick="setAntenna(1,'B')">ANT B</button>
+                        </div>
                     </div>
-                    <div class="antenna-line">
-                        <span>Radio 2</span> → <span id="r2Antenna">B</span>
+                    <div class="antenna-row">
+                        <span class="antenna-radio-label">Radio 2</span>
+                        <div class="antenna-btn-group">
+                            <button id="r2AntA" class="btn-antenna active" onclick="setAntenna(2,'A')">ANT A</button>
+                            <button id="r2AntB" class="btn-antenna" onclick="setAntenna(2,'B')">ANT B</button>
+                        </div>
                     </div>
                 </div>
+                <div id="antennaInterlockMsg" class="antenna-interlock-msg" style="display:none"></div>
             </div>
 
             <!-- System Info Card -->

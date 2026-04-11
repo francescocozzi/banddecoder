@@ -23,7 +23,6 @@ async function loadConfig() {
             config = result.data;
             console.log('Configuration loaded:', config);
             renderBandTable();
-            loadAntennaMode();
         } else {
             console.error('Failed to load config:', result.error);
         }
@@ -79,8 +78,8 @@ function updateDisplay(data) {
         updateRelays(data.relays);
     }
 
-    // Update antenna mode
-    updateAntennaDisplay(data.antenna_mode);
+    // Update antenna display
+    updateAntennaDisplay(data);
 
     // Update system info
     updateSystemInfo(data.system);
@@ -183,36 +182,14 @@ function updateRelayBoard(boardNum, relayStates) {
 }
 
 // Update antenna display
-function updateAntennaDisplay(mode) {
-    const select = document.getElementById('antennaMode');
-    if (select && select.value !== mode) {
-        select.value = mode;
-    }
+function updateAntennaDisplay(data) {
+    const r1 = data.radio1_antenna || 'A';
+    const r2 = data.radio2_antenna || 'A';
 
-    // Update antenna routing display
-    const r1Antenna = document.getElementById('r1Antenna');
-    const r2Antenna = document.getElementById('r2Antenna');
-
-    if (r1Antenna && r2Antenna) {
-        switch (mode) {
-            case 'both_a':
-                r1Antenna.textContent = 'A';
-                r2Antenna.textContent = 'A';
-                break;
-            case 'r1a_r2b':
-                r1Antenna.textContent = 'A';
-                r2Antenna.textContent = 'B';
-                break;
-            case 'r1b_r2a':
-                r1Antenna.textContent = 'B';
-                r2Antenna.textContent = 'A';
-                break;
-            case 'both_b':
-                r1Antenna.textContent = 'B';
-                r2Antenna.textContent = 'B';
-                break;
-        }
-    }
+    document.getElementById('r1AntA')?.classList.toggle('active', r1 === 'A');
+    document.getElementById('r1AntB')?.classList.toggle('active', r1 === 'B');
+    document.getElementById('r2AntA')?.classList.toggle('active', r2 === 'A');
+    document.getElementById('r2AntB')?.classList.toggle('active', r2 === 'B');
 }
 
 // Update system info
@@ -272,31 +249,6 @@ function renderBandTable() {
 }
 
 // Load antenna mode options
-function loadAntennaMode() {
-    if (!config || !config.antenna_switch) return;
-
-    const select = document.getElementById('antennaMode');
-    if (!select) return;
-
-    // Clear existing options
-    select.innerHTML = '';
-
-    // Add options from config
-    const modes = config.antenna_switch.modes;
-    for (const [key, description] of Object.entries(modes)) {
-        const option = document.createElement('option');
-        option.value = key;
-        option.textContent = description;
-        select.appendChild(option);
-    }
-
-    // Set default mode
-    const defaultMode = config.antenna_switch.default_mode;
-    if (defaultMode) {
-        select.value = defaultMode;
-    }
-}
-
 // Toggle manual mode
 async function toggleManualMode() {
     const newMode = !manualMode;
@@ -347,32 +299,29 @@ async function setManualRelay(board, relay, state) {
     }
 }
 
-// Change antenna mode
-async function changeAntennaMode() {
-    const select = document.getElementById('antennaMode');
-    const mode = select.value;
-
+// Set antenna for a radio
+async function setAntenna(radio, antenna) {
     try {
-        const response = await fetch(`${API_BASE}/api/antenna`, {
+        const response = await fetch(`${API_BASE}/api/antenna/set`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ mode: mode })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ radio, antenna })
         });
 
         const result = await response.json();
 
         if (result.success) {
-            console.log('Antenna mode changed to:', mode);
-            showNotification('Antenna mode changed', 'success');
+            updateAntennaDisplay(result.data);
         } else {
-            console.error('Failed to change antenna mode:', result.error);
-            showNotification('Failed to change antenna mode', 'error');
+            const msg = document.getElementById('antennaInterlockMsg');
+            if (msg) {
+                msg.textContent = result.error;
+                msg.style.display = 'block';
+                setTimeout(() => { msg.style.display = 'none'; }, 3000);
+            }
         }
     } catch (error) {
-        console.error('Error changing antenna mode:', error);
-        showNotification('Error changing antenna mode', 'error');
+        console.error('Error setting antenna:', error);
     }
 }
 

@@ -148,43 +148,66 @@ header h1 {
 }
 
 /* Antenna Card */
-.antenna-mode {
-    margin-bottom: 20px;
+.antenna-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
 
-.antenna-mode label {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--text-secondary);
-}
-
-.antenna-mode select {
-    width: 100%;
-    padding: 10px;
-    background: var(--dark-bg);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    font-size: 1rem;
-    cursor: pointer;
-}
-
-.antenna-diagram {
-    margin-top: 20px;
-}
-
-.antenna-line {
+.antenna-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     padding: 12px;
-    margin: 8px 0;
-    background: rgba(59, 130, 246, 0.1);
+    background: rgba(59, 130, 246, 0.05);
     border-left: 3px solid var(--primary-color);
     border-radius: 4px;
-    font-size: 1.1rem;
 }
 
-.antenna-line span:last-child {
-    color: var(--success-green);
+.antenna-radio-label {
+    font-size: 1rem;
     font-weight: bold;
+    min-width: 60px;
+}
+
+.antenna-btn-group {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-antenna {
+    padding: 8px 20px;
+    background: var(--dark-bg);
+    color: var(--text-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-antenna:hover {
+    border-color: var(--primary-color);
+    color: var(--text-primary);
+}
+
+.btn-antenna.active {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+.antenna-interlock-msg {
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--danger-color);
+    border-radius: 6px;
+    color: var(--danger-color);
+    font-size: 0.85rem;
+    text-align: center;
 }
 
 /* System Card */

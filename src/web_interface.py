@@ -48,6 +48,8 @@ state = {
         'board2': [False] * 8
     },
     'antenna_mode': 'r1a_r2b',
+    'radio1_antenna': 'A',
+    'radio2_antenna': 'A',
     'manual_mode': False,
     'pending_relay_command': None,  # {'board': 1, 'relay': 0, 'state': True}
     'system': {
@@ -173,46 +175,73 @@ def api_relays():
         }), 500
 
 
-@app.route('/api/antenna', methods=['GET', 'POST'])
+@app.route('/api/antenna', methods=['GET'])
 def api_antenna():
-    """Get or set antenna mode"""
+    """Get current antenna assignments"""
     try:
-        if request.method == 'GET':
-            return jsonify({
-                'success': True,
-                'data': {
-                    'mode': state['antenna_mode'],
-                    'available_modes': config.get('antenna_switch.modes') if config else {}
-                }
-            })
-
-        elif request.method == 'POST':
-            data = request.get_json()
-            mode = data.get('mode')
-
-            # Validate mode
-            if config:
-                valid_modes = config.get('antenna_switch.modes', {}).keys()
-                if mode not in valid_modes:
-                    return jsonify({
-                        'success': False,
-                        'error': f'Invalid mode. Valid modes: {list(valid_modes)}'
-                    }), 400
-
-            state['antenna_mode'] = mode
-            logger.info(f"Antenna mode changed to: {mode}")
-
-            return jsonify({
-                'success': True,
-                'data': {'mode': mode}
-            })
-
+        return jsonify({
+            'success': True,
+            'data': {
+                'radio1_antenna': state['radio1_antenna'],
+                'radio2_antenna': state['radio2_antenna'],
+            }
+        })
     except Exception as e:
         logger.error(f"Error with antenna API: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/antenna/set', methods=['POST'])
+def api_antenna_set():
+    """
+    Set antenna for a specific radio with interlock check.
+    Body: {"radio": 1, "antenna": "A"}
+    Interlock: both radios cannot be on the same antenna simultaneously.
+    """
+    try:
+        data = request.get_json()
+        radio = data.get('radio')
+        antenna = data.get('antenna', '').upper()
+
+        if radio not in [1, 2] or antenna not in ['A', 'B']:
+            return jsonify({'success': False, 'error': 'Invalid parameters'}), 400
+
+        # Interlock check
+        other_antenna = state['radio2_antenna'] if radio == 1 else state['radio1_antenna']
+        if antenna == other_antenna:
+            other_radio = 2 if radio == 1 else 1
+            return jsonify({
+                'success': False,
+                'error': f'Interlock: Radio {other_radio} is already on Antenna {antenna}'
+            }), 409
+
+        # Update state — band_decoder will apply via update_state response
+        if radio == 1:
+            state['radio1_antenna'] = antenna
+        else:
+            state['radio2_antenna'] = antenna
+
+        # Derive legacy antenna_mode for band_decoder compatibility
+        r1 = state['radio1_antenna']
+        r2 = state['radio2_antenna']
+        if r1 == 'A' and r2 == 'A':
+            state['antenna_mode'] = 'both_a'
+        elif r1 == 'A' and r2 == 'B':
+            state['antenna_mode'] = 'r1a_r2b'
+        elif r1 == 'B' and r2 == 'A':
+            state['antenna_mode'] = 'r1b_r2a'
+        else:
+            state['antenna_mode'] = 'both_b'
+
+        logger.info(f"Antenna set: Radio{radio} → Antenna {antenna} (mode: {state['antenna_mode']})")
         return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+            'success': True,
+            'data': {'radio1_antenna': state['radio1_antenna'], 'radio2_antenna': state['radio2_antenna']}
+        })
+
+    except Exception as e:
+        logger.error(f"Error setting antenna: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/relay/test', methods=['POST'])
@@ -344,7 +373,11 @@ def api_update_state():
 
         if not state['manual_mode']:
             if 'antenna_mode' in data:
-                state['antenna_mode'] = data['antenna_mode']
+                mode = data['antenna_mode']
+                state['antenna_mode'] = mode
+                # Sync per-radio antenna from mode
+                state['radio1_antenna'] = 'A' if mode in ('both_a', 'r1a_r2b') else 'B'
+                state['radio2_antenna'] = 'A' if mode in ('both_a', 'r1b_r2a') else 'B'
 
         # Return manual mode flag and pending command (clears it after sending)
         pending = state['pending_relay_command']
