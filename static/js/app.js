@@ -155,13 +155,13 @@ function updateRelayBoard(boardNum, relayStates) {
 
         const statusElement = relayItem.querySelector('.relay-status');
 
-        // Only show band relays as interactive (not antenna switch relays)
+        // Interlock applies only to band relays (same index = same band on other radio)
         const isBandRelay = index < numBands;
         const isInterlocked = isBandRelay && manualMode && (otherBoardStates[index] === true);
 
-        // Update visual state
+        // Update visual state — all 8 relays are clickable in manual mode
         relayItem.classList.toggle('active', state);
-        relayItem.classList.toggle('manual-clickable', manualMode && isBandRelay && !isInterlocked);
+        relayItem.classList.toggle('manual-clickable', manualMode && !isInterlocked);
         relayItem.classList.toggle('interlock-blocked', isInterlocked);
 
         if (statusElement) {
@@ -174,8 +174,8 @@ function updateRelayBoard(boardNum, relayStates) {
             }
         }
 
-        // Set click handler in manual mode
-        if (manualMode && isBandRelay && !isInterlocked) {
+        // Set click handler in manual mode — all relays clickable except interlocked
+        if (manualMode && !isInterlocked) {
             relayItem.onclick = () => setManualRelay(boardNum, index, !state);
         } else {
             relayItem.onclick = null;
