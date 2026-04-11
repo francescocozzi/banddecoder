@@ -78,8 +78,6 @@ function updateDisplay(data) {
         updateRelays(data.relays);
     }
 
-    // Update antenna display
-    updateAntennaDisplay(data);
 
     // Update system info
     updateSystemInfo(data.system);
@@ -181,16 +179,6 @@ function updateRelayBoard(boardNum, relayStates) {
     });
 }
 
-// Update antenna display
-function updateAntennaDisplay(data) {
-    const r1 = data.radio1_antenna || 'A';
-    const r2 = data.radio2_antenna || 'A';
-
-    document.getElementById('r1AntA')?.classList.toggle('active', r1 === 'A');
-    document.getElementById('r1AntB')?.classList.toggle('active', r1 === 'B');
-    document.getElementById('r2AntA')?.classList.toggle('active', r2 === 'A');
-    document.getElementById('r2AntB')?.classList.toggle('active', r2 === 'B');
-}
 
 // Update system info
 function updateSystemInfo(systemData) {
@@ -299,31 +287,6 @@ async function setManualRelay(board, relay, state) {
     }
 }
 
-// Set antenna for a radio
-async function setAntenna(radio, antenna) {
-    try {
-        const response = await fetch(`${API_BASE}/api/antenna/set`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ radio, antenna })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            updateAntennaDisplay(result.data);
-        } else {
-            const msg = document.getElementById('antennaInterlockMsg');
-            if (msg) {
-                msg.textContent = result.error;
-                msg.style.display = 'block';
-                setTimeout(() => { msg.style.display = 'none'; }, 3000);
-            }
-        }
-    } catch (error) {
-        console.error('Error setting antenna:', error);
-    }
-}
 
 // Restart system
 async function restartSystem() {

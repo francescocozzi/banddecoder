@@ -472,10 +472,6 @@ class BandDecoder:
             self.logger.info("Press CTRL+C to stop")
             self.logger.info("")
 
-            # Set default antenna mode
-            default_antenna_mode = self.config.get('antenna_switch.default_mode', 'r1a_r2b')
-            self.set_antenna_mode(default_antenna_mode)
-
             while self.running:
                 self.poll_radios()
 
